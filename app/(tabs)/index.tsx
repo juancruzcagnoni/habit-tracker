@@ -16,7 +16,9 @@ function formatDate(date: Date): string {
 export default function IndexScreen() {
   const [habits, setHabits] = useState<any[]>([]);
   const [completed, setCompleted] = useState<any[]>([]);
+  const [exclusions, setExclusions] = useState<any[]>([]);
   const swipeableRefs = useRef<{ [key: string]: Swipeable | null }>({});
+  const completedRefs = useRef<{ [key: string]: Swipeable | null }>({});
   const today = new Date();
   const options: Intl.DateTimeFormatOptions = { month: "long", day: "numeric" };
   const formattedDate = today.toLocaleDateString("en-US", options);
@@ -29,25 +31,31 @@ export default function IndexScreen() {
   const selectedDayKey = WEEK_DAYS_KEYS[selectedDate.getDay()];
   const userDateStr = formatDate(selectedDate);
 
-  // Cargar hábitos y completados
+  // Cargar hábitos, completados y exclusiones
   const fetchHabits = async () => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
-
     if (userError || !userData?.user) {
       console.error("No user logged in", userError?.message);
       return;
     }
-
     const userId = userData.user.id;
-    // Traer hábitos
+
+    // Hábitos
     const { data, error } = await supabase
       .from("habits")
       .select("*")
       .eq("user_id", userId);
 
-    // Traer completados
+    // Completados
     const { data: completions, error: error2 } = await supabase
       .from("habit_completions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("date", userDateStr);
+
+    // Exclusiones
+    const { data: exclusionData, error: error3 } = await supabase
+      .from("habit_exclusions")
       .select("*")
       .eq("user_id", userId)
       .eq("date", userDateStr);
@@ -62,6 +70,11 @@ export default function IndexScreen() {
     } else {
       setCompleted(completions?.map((c: any) => c.habit_id) || []);
     }
+    if (error3) {
+      console.error("Error fetching exclusions:", error3.message);
+    } else {
+      setExclusions(exclusionData?.map((e: any) => e.habit_id) || []);
+    }
   };
 
   useFocusEffect(
@@ -72,30 +85,73 @@ export default function IndexScreen() {
 
   const router = useRouter();
 
-  const handleDeleteHabit = (habitId: string, habitTitle: string) => {
+  // Eliminar
+  const handleDeleteHabit = (habitId: number, habitTitle: string) => {
     Alert.alert(
       "Delete Habit",
-      `Are you sure you want to delete "${habitTitle}"?`,
+      `Do you want to delete "${habitTitle}" just for today or for all days?`,
       [
-        { text: "Cancel", style: "cancel" },
         {
-          text: "Delete",
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Only for today",
           style: "destructive",
           onPress: async () => {
-            const { error } = await supabase.from("habits").delete().eq("id", habitId);
-            if (error) {
-              console.error("Error deleting habit:", error.message);
-            } else {
-              setHabits((prev) => prev.filter((h) => h.id !== habitId));
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            if (userError || !userData?.user) {
+              alert("You must be logged in.");
+              return;
             }
+            const userId = userData.user.id;
+            // Inserta exclusión para ese día/hábito/usuario
+            const { error } = await supabase
+              .from("habit_exclusions")
+              .insert([
+                {
+                  habit_id: habitId,
+                  user_id: userId,
+                  date: userDateStr,
+                },
+              ]);
+            if (error) {
+              alert("Error excluding for today: " + error.message);
+            }
+            fetchHabits();
+          },
+        },
+        {
+          text: "For all days",
+          style: "destructive",
+          onPress: async () => {
+            // Borra completions
+            await supabase
+              .from("habit_completions")
+              .delete()
+              .eq("habit_id", habitId);
+            // Borra exclusiones
+            await supabase
+              .from("habit_exclusions")
+              .delete()
+              .eq("habit_id", habitId);
+            // Borra el hábito
+            const { error } = await supabase
+              .from("habits")
+              .delete()
+              .eq("id", habitId);
+            if (error) {
+              alert("Error deleting habit: " + error.message);
+            }
+            fetchHabits();
           },
         },
       ]
     );
   };
 
-  // Lógica para marcar como completado
-  const handleCompleteHabit = async (habitId: string) => {
+  // Marcar como completado
+  const handleCompleteHabit = async (habitId: number) => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData?.user) {
       alert("You must be logged in.");
@@ -119,6 +175,29 @@ export default function IndexScreen() {
     fetchHabits();
   };
 
+  // Marcar como incompleto (eliminar completion)
+  const handleUncompleteHabit = async (habitId: number) => {
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    if (userError || !userData?.user) {
+      alert("You must be logged in.");
+      return;
+    }
+    const userId = userData.user.id;
+
+    // Elimina solo la completion de ese día y ese hábito
+    const { error } = await supabase
+      .from("habit_completions")
+      .delete()
+      .eq("habit_id", habitId)
+      .eq("user_id", userId)
+      .eq("date", userDateStr);
+
+    if (error) {
+      alert("Error marking habit as incomplete: " + error.message);
+    }
+    fetchHabits();
+  };
+
   const renderLeftActions = () => (
     <View style={styles.leftAction}>
       <Feather name="trash-2" size={28} color="#FFF" />
@@ -130,8 +209,6 @@ export default function IndexScreen() {
       <Feather name="check-circle" size={28} color="#FFF" />
     </View>
   );
-
-  
 
   // Semana actual de lunes a domingo
   function getWeekDaysMondayToSunday(date: Date) {
@@ -150,11 +227,11 @@ export default function IndexScreen() {
   }
   const weekDays = getWeekDaysMondayToSunday(selectedDate);
 
-  // Separar hábitos completados de no completados
+  // Separar hábitos visibles y completados
   const visibleHabits = habits.filter((habit) => {
     if (!habit.repeat_days || habit.repeat_days.length === 0) return true;
     return habit.repeat_days.includes(selectedDayKey);
-  });
+  }).filter((habit) => !exclusions.includes(habit.id)); // Excluir los de ese día
 
   const incompleteHabits = visibleHabits.filter((habit) => !completed.includes(habit.id));
   const completedHabits = visibleHabits.filter((habit) => completed.includes(habit.id));
@@ -247,31 +324,55 @@ export default function IndexScreen() {
               <>
                 <Text style={styles.completedTitle}>Completed</Text>
                 {completedHabits.map((habit) => (
-                  <Surface
-                    elevation={0}
-                    style={[styles.card, styles.completedCard]}
+                  <Swipeable
                     key={habit.id}
+                    ref={(ref: Swipeable | null) => {
+                      completedRefs.current[habit.id] = ref;
+                    }}
+                    overshootLeft={false}
+                    overshootRight={false}
+                    renderLeftActions={renderLeftActions}
+                    renderRightActions={() => (
+                      <View style={styles.uncompleteAction}>
+                        <Feather name="rotate-ccw" size={28} color="#FFF" />
+                      </View>
+                    )}
+                    onSwipeableWillOpen={(direction) => {
+                      if (direction === "left") {
+                        handleDeleteHabit(habit.id, habit.title);
+                        completedRefs.current[habit.id]?.close();
+                      }
+                      if (direction === "right") {
+                        handleUncompleteHabit(habit.id);
+                        completedRefs.current[habit.id]?.close();
+                      }
+                    }}
                   >
-                    <View style={styles.cardContent}>
-                      <View style={{ flexDirection: "row", alignItems: "center" }}>
-                        <Text
-                          style={[
-                            styles.cardTitle,
-                            {
-                              color: "#5d5d5dff",
-                              textDecorationLine: "line-through",
-                              opacity: 0.6,
-                            },
-                          ]}
-                        >
-                          {habit.title}
+                    <Surface
+                      elevation={0}
+                      style={[styles.card, styles.completedCard]}
+                    >
+                      <View style={styles.cardContent}>
+                        <View style={{ flexDirection: "row", alignItems: "center" }}>
+                          <Text
+                            style={[
+                              styles.cardTitle,
+                              {
+                                color: "#5d5d5dff",
+                                textDecorationLine: "line-through",
+                                opacity: 0.6,
+                              },
+                            ]}
+                          >
+                            {habit.title}
+                          </Text>
+                        </View>
+                        <Text style={[styles.cardDescription, { opacity: 0.6 }]}>
+                          {habit.description}
                         </Text>
                       </View>
-                      <Text style={[styles.cardDescription, { opacity: 0.6 }]}>
-                        {habit.description}
-                      </Text>
-                    </View>
-                  </Surface>
+                    </Surface>
+                  </Swipeable>
                 ))}
               </>
             )}
@@ -347,7 +448,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   completedCard: {
-    opacity: 0.7,
     backgroundColor: "#EEEEEE",
   },
   completedTitle: {
@@ -394,6 +494,16 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     flex: 1,
     backgroundColor: "#3be535ff",
+    borderRadius: 18,
+    marginBottom: 18,
+    marginTop: 2,
+    paddingRight: 16,
+  },
+  uncompleteAction: {
+    justifyContent: "center",
+    alignItems: "flex-end",
+    flex: 1,
+    backgroundColor: "#FFB300",
     borderRadius: 18,
     marginBottom: 18,
     marginTop: 2,
