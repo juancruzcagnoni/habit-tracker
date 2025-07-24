@@ -1,29 +1,98 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Stack, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  Keyboard,
+  TouchableWithoutFeedback,
+  View
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { PaperProvider } from "react-native-paper";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { AuthProvider } from "../lib/auth-context";
+import { supabase } from "../lib/supabase";
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+function RouteGuard({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const router = useRouter();
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
+  useEffect(() => {
+    let isMounted = true;
 
-  if (!loaded) {
-    // Async font loading only occurs in development.
-    return null;
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (error) {
+          console.error("Error checking auth:", error.message);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          setTimeout(() => router.replace("/auth"), 0);
+          return;
+        }
+
+        setIsAuthenticated(!!session);
+        setIsLoading(false);
+
+        if (!session) {
+          setTimeout(() => router.replace("/auth"), 0);
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        setTimeout(() => router.replace("/auth"), 0);
+      }
+    };
+
+    checkAuth();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      if (!session) {
+        setTimeout(() => router.replace("/auth"), 0);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
   }
 
+  return <>{children}</>;
+}
+
+export default function RootLayout() {
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+        <View style={{ flex: 1 }}>
+          <AuthProvider>
+            <PaperProvider>
+              <SafeAreaProvider>
+                <RouteGuard>
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="auth" options={{ headerShown: false }} />
+                  </Stack>
+                </RouteGuard>
+              </SafeAreaProvider>
+            </PaperProvider>
+          </AuthProvider>
+        </View>
+      </TouchableWithoutFeedback>
+    </GestureHandlerRootView>
   );
 }

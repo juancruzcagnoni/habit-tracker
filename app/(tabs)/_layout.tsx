@@ -1,43 +1,63 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
-import { Platform } from 'react-native';
+import { Feather } from "@expo/vector-icons";
+import { Tabs } from "expo-router";
+import React from "react";
 
-import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+export default function TabsLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        headerShown: false,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-      }}>
-      <Tabs.Screen
+    <Tabs screenOptions={{
+      tabBarActiveTintColor: "coral",
+      tabBarInactiveTintColor: "gray",
+      headerShadowVisible: false,
+      headerStyle: { backgroundColor: "f5f5f5" },
+      tabBarStyle: {
+        backgroundColor: "f5f5f5",
+        borderTopWidth: 0,
+        elevation: 0,
+        shadowOpacity: 0,
+        height: 85,
+      },
+    }}>
+      < Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Today's Habits",
+          tabBarIcon: ({ color }) => (
+            <Feather name="calendar" size={24} color={color} />
+          ),
+          headerShown: false
         }}
       />
-      <Tabs.Screen
-        name="explore"
+
+      < Tabs.Screen
+        name="streaks"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Streaks",
+          tabBarIcon: ({ color }) => (
+            <Feather name="bar-chart-2" size={24} color={color} />
+          ),
+          headerShown: false
+        }}
+      />
+
+      < Tabs.Screen
+        name="add-habit"
+        options={{
+          title: "Add Habit",
+          tabBarIcon: ({ color }) => (
+            <Feather name="plus-circle" size={24} color={color} />
+          ),
+          headerShown: false
+        }}
+      />
+
+      < Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={24} color={color} />
+          ),
+          headerShown: false
         }}
       />
     </Tabs>
