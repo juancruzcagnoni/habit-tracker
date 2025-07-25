@@ -1,9 +1,11 @@
 import { supabase } from "@/lib/supabase";
+import { useThemeToggle } from "@/lib/theme-context";
+import { AppColors } from "@/lib/themeHelpers";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
-import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 import { Surface, Text } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -24,6 +26,9 @@ export default function IndexScreen() {
   const formattedDate = today.toLocaleDateString("en-US", options);
   const insets = useSafeAreaInsets();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [showSettings, setShowSettings] = useState(false);
+  const { isDark, toggleTheme } = useThemeToggle();
+  const colors = isDark ? AppColors.dark : AppColors.light;
 
   // Calendario
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -236,17 +241,52 @@ export default function IndexScreen() {
   const incompleteHabits = visibleHabits.filter((habit) => !completed.includes(habit.id));
   const completedHabits = visibleHabits.filter((habit) => completed.includes(habit.id));
 
+  // Cerrar sesión
+  const handleLogout = async () => {
+    Alert.alert(
+      "Cerrar sesión",
+      "¿Estás seguro de que querés cerrar sesión?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel",
+        },
+        {
+          text: "Cerrar sesión",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase.auth.signOut();
+            if (error) {
+              Alert.alert("Error", "Hubo un problema al cerrar sesión.");
+            } else {
+              setShowSettings(false);
+              router.replace("/auth");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const actionColors = {
+    left: colors.error,
+    right: colors.primary,
+    uncomplete: "#FFB300",
+  };
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.titleBold}>Today, </Text>
-          <Text style={styles.titleLight}>{formattedDate}</Text>
+          <Text style={[styles.titleBold, { color: colors.text }]}>Today, </Text>
+          <Text style={[styles.titleLight, { color: colors.textSecondary }]}>{formattedDate}</Text>
         </View>
-        <Feather name="settings" size={24} color="black" />
+        <TouchableOpacity onPress={() => setShowSettings(true)}>
+          <Feather name="settings" size={24} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.calendarContainer}>
+      <View style={[styles.calendarContainer, { backgroundColor: colors.surface }]}>
         {weekDays.map((day, index) => (
           <TouchableOpacity
             key={index}
@@ -257,19 +297,27 @@ export default function IndexScreen() {
             <Text
               style={[
                 styles.dayLabel,
-                day.isSelected && { fontWeight: "bold", color: "coral" },
+                { color: colors.textSecondary },
+                day.isSelected && { fontWeight: "bold", color: colors.primary },
               ]}
             >
               {day.dayLabel}
             </Text>
-            <Text
+            <View
               style={[
-                styles.dayNumber,
-                day.isSelected && styles.selectedDayNumber,
+                styles.dayNumberContainer,
+                day.isSelected && { backgroundColor: colors.primary },
               ]}
             >
-              {day.date.getDate()}
-            </Text>
+              <Text
+                style={[
+                  styles.dayNumber,
+                  { color: day.isSelected ? colors.onPrimary : colors.text },
+                ]}
+              >
+                {day.date.getDate()}
+              </Text>
+            </View>
           </TouchableOpacity>
         ))}
       </View>
@@ -278,7 +326,9 @@ export default function IndexScreen() {
         {/* Incompletos */}
         {incompleteHabits.length === 0 && completedHabits.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No habits found. Start by adding one!</Text>
+            <Text style={[styles.emptyStateText, { color: colors.textSecondary }]}>
+              No habits found. Start by adding one!
+            </Text>
           </View>
         ) : (
           <>
@@ -290,8 +340,16 @@ export default function IndexScreen() {
                 }}
                 overshootLeft={false}
                 overshootRight={false}
-                renderLeftActions={renderLeftActions}
-                renderRightActions={renderRightActions}
+                renderLeftActions={() => (
+                  <View style={[styles.leftAction, { backgroundColor: actionColors.left }]}>
+                    <Feather name="trash-2" size={28} color="#FFF" />
+                  </View>
+                )}
+                renderRightActions={() => (
+                  <View style={[styles.rightAction, { backgroundColor: actionColors.right }]}>
+                    <Feather name="check-circle" size={28} color="#FFF" />
+                  </View>
+                )}
                 onSwipeableWillOpen={(direction) => {
                   if (direction === "left") {
                     handleDeleteHabit(habit.id, habit.title);
@@ -303,17 +361,19 @@ export default function IndexScreen() {
                   }
                 }}
               >
-                <Surface elevation={0} style={styles.card}>
+                <Surface elevation={0} style={[styles.card, { backgroundColor: colors.card }]}>
                   <View style={styles.cardContent}>
                     <Text
                       style={[
                         styles.cardTitle,
-                        { color: habit.color || "#22223B" },
+                        { color: habit.color || colors.text },
                       ]}
                     >
                       {habit.title}
                     </Text>
-                    <Text style={styles.cardDescription}>{habit.description}</Text>
+                    <Text style={[styles.cardDescription, { color: colors.textSecondary }]}>
+                      {habit.description}
+                    </Text>
                   </View>
                 </Surface>
               </Swipeable>
@@ -322,7 +382,7 @@ export default function IndexScreen() {
             {/* Completados */}
             {completedHabits.length > 0 && (
               <>
-                <Text style={styles.completedTitle}>Completed</Text>
+                <Text style={[styles.completedTitle, { color: colors.primary }]}>Completed</Text>
                 {completedHabits.map((habit) => (
                   <Swipeable
                     key={habit.id}
@@ -331,9 +391,13 @@ export default function IndexScreen() {
                     }}
                     overshootLeft={false}
                     overshootRight={false}
-                    renderLeftActions={renderLeftActions}
+                    renderLeftActions={() => (
+                      <View style={[styles.leftAction, { backgroundColor: actionColors.left }]}>
+                        <Feather name="trash-2" size={28} color="#FFF" />
+                      </View>
+                    )}
                     renderRightActions={() => (
-                      <View style={styles.uncompleteAction}>
+                      <View style={[styles.uncompleteAction, { backgroundColor: actionColors.uncomplete }]}>
                         <Feather name="rotate-ccw" size={28} color="#FFF" />
                       </View>
                     )}
@@ -350,7 +414,7 @@ export default function IndexScreen() {
                   >
                     <Surface
                       elevation={0}
-                      style={[styles.card, styles.completedCard]}
+                      style={[styles.card, styles.completedCard, { backgroundColor: colors.cardCompleted }]}
                     >
                       <View style={styles.cardContent}>
                         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -358,7 +422,7 @@ export default function IndexScreen() {
                             style={[
                               styles.cardTitle,
                               {
-                                color: "#5d5d5dff",
+                                color: colors.textSecondary,
                                 textDecorationLine: "line-through",
                                 opacity: 0.6,
                               },
@@ -367,7 +431,7 @@ export default function IndexScreen() {
                             {habit.title}
                           </Text>
                         </View>
-                        <Text style={[styles.cardDescription, { opacity: 0.6 }]}>
+                        <Text style={[styles.cardDescription, { opacity: 0.6, color: colors.textSecondary }]}>
                           {habit.description}
                         </Text>
                       </View>
@@ -379,15 +443,46 @@ export default function IndexScreen() {
           </>
         )}
       </ScrollView>
+
+      <Modal
+        visible={showSettings}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSettings(false)}
+      >
+        <TouchableOpacity style={styles.modalBackdrop} onPress={() => setShowSettings(false)} activeOpacity={1}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Settings</Text>
+            <TouchableOpacity style={styles.modalOption} onPress={handleLogout}>
+              <Feather name="log-out" size={20} color={colors.error} />
+              <Text style={[styles.modalOptionText, { color: colors.text }]}>Logout</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOption} onPress={toggleTheme}>
+              <Feather name={isDark ? "sun" : "moon"} size={20} color={colors.text} />
+              <Text style={[styles.modalOptionText, { color: colors.text }]}>
+                Tema: {isDark ? "Claro" : "Oscuro"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOption}>
+              <Feather name="trash-2" size={20} color={colors.error} />
+              <Text style={[styles.modalOptionText, { color: colors.text }]}>Delete Account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalOption}>
+              <Feather name="globe" size={20} color={colors.text} />
+              <Text style={[styles.modalOptionText, { color: colors.text }]}>Language: Español</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
 
+// Sólo quedan los valores no de color en el StyleSheet
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: "#F5F5F5",
   },
   header: {
     flexDirection: "row",
@@ -402,18 +497,15 @@ const styles = StyleSheet.create({
   titleBold: {
     fontSize: 26,
     fontWeight: "bold",
-    color: "#000",
   },
   titleLight: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#666",
   },
   calendarContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#fff",
     paddingHorizontal: 8,
     paddingVertical: 10,
     borderRadius: 16,
@@ -427,35 +519,29 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     fontSize: 14,
-    color: "#666",
+  },
+  dayNumberContainer: {
+    borderRadius: 15,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    alignItems: "center",
+    justifyContent: "center",
   },
   dayNumber: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#333",
-  },
-  selectedDayNumber: {
-    backgroundColor: "coral",
-    color: "#fff",
-    borderRadius: 15,
-    overflow: "hidden",
-    paddingHorizontal: 8,
-    fontWeight: "bold",
   },
   card: {
     marginBottom: 18,
     borderRadius: 18,
-    backgroundColor: "#fff",
   },
   completedCard: {
-    backgroundColor: "#EEEEEE",
   },
   completedTitle: {
     marginLeft: 8,
     marginBottom: 5,
     marginTop: 15,
     fontSize: 16,
-    color: "coral",
     fontWeight: "bold",
   },
   cardContent: {
@@ -465,11 +551,9 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     marginBottom: 4,
-    color: "#22223B",
   },
   cardDescription: {
     fontSize: 15,
-    color: "#6C6C80",
   },
   emptyState: {
     flex: 1,
@@ -477,13 +561,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyStateText: {
-    color: "#666666",
   },
   leftAction: {
     justifyContent: "center",
     alignItems: "flex-start",
     flex: 1,
-    backgroundColor: "#E53935",
     borderRadius: 18,
     marginBottom: 18,
     marginTop: 2,
@@ -493,7 +575,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-end",
     flex: 1,
-    backgroundColor: "#3be535ff",
     borderRadius: 18,
     marginBottom: 18,
     marginTop: 2,
@@ -503,10 +584,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-end",
     flex: 1,
-    backgroundColor: "#FFB300",
     borderRadius: 18,
     marginBottom: 18,
     marginTop: 2,
     paddingRight: 16,
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    padding: 24,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    minHeight: 260,
+    // Sombras para iOS
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    // Sombra para Android
+    elevation: 8,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 14,
+  },
+  modalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    gap: 12,
+  },
+  modalOptionText: {
+    fontSize: 16,
   },
 });

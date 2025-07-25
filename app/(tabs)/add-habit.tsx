@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase";
+import { AppColors } from "@/lib/themeHelpers";
+import { useThemeToggle } from "@/lib/theme-context";
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
@@ -39,6 +41,8 @@ export default function AddHabitScreen() {
     const insets = useSafeAreaInsets();
     const [color, setColor] = React.useState(HABIT_COLORS[0]);
     const [repeatDays, setRepeatDays] = React.useState<string[]>([]);
+    const { isDark } = useThemeToggle();
+    const colors = isDark ? AppColors.dark : AppColors.light;
 
     const toggleDay = (key: string) => {
         setRepeatDays((prev) =>
@@ -79,38 +83,47 @@ export default function AddHabitScreen() {
     };
 
     return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={[
+            styles.container,
+            { paddingTop: insets.top, backgroundColor: colors.background }
+        ]}>
             <View style={{ flex: 1 }}>
                 <View style={styles.header}>
                     <View style={styles.titleContainer}>
-                        <Text style={styles.titleBold}>Create a new habit</Text>
+                        <Text style={[styles.titleBold, { color: colors.text }]}>Create a new habit</Text>
                     </View>
                 </View>
 
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: colors.surface }]}
                     label="Title"
                     value={title}
                     onChangeText={setTitle}
                     mode="outlined"
-                    activeOutlineColor="coral"
-                    textColor="black"
+                    activeOutlineColor={colors.primary}
+                    textColor={colors.text}
+                    theme={{ colors: { background: colors.surface } }}
                 />
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { backgroundColor: colors.surface }]}
                     label="Description"
                     value={description}
                     onChangeText={setDescription}
                     mode="outlined"
-                    activeOutlineColor="coral"
-                    textColor="black"
+                    activeOutlineColor={colors.primary}
+                    textColor={colors.text}
+                    theme={{ colors: { background: colors.surface } }}
                 />
+
                 <View style={styles.colorsRow}>
                     {HABIT_COLORS.map((c) => (
                         <TouchableOpacity
                             key={c}
                             onPress={() => setColor(c)}
-                            style={[styles.colorCircle, { backgroundColor: c }]}
+                            style={[
+                                styles.colorCircle,
+                                { backgroundColor: c, borderColor: color === c ? colors.primary : "transparent", borderWidth: color === c ? 2 : 0 }
+                            ]}
                             activeOpacity={0.7}
                         >
                             {color === c && (
@@ -119,8 +132,9 @@ export default function AddHabitScreen() {
                         </TouchableOpacity>
                     ))}
                 </View>
+
                 <View style={styles.repeatContainer}>
-                    <Text style={styles.repeatLabel}>Repeat days</Text>
+                    <Text style={[styles.repeatLabel, { color: colors.textSecondary }]}>Repeat days</Text>
                     <View style={styles.repeatDaysRow}>
                         {WEEK_DAYS.map((day, idx) => (
                             <TouchableOpacity
@@ -128,14 +142,24 @@ export default function AddHabitScreen() {
                                 onPress={() => toggleDay(day.key)}
                                 style={[
                                     styles.repeatDayCircle,
-                                    repeatDays.includes(day.key) && styles.repeatDayCircleActive,
+                                    {
+                                        backgroundColor: repeatDays.includes(day.key)
+                                            ? colors.primary
+                                            : colors.surface,
+                                        borderColor: colors.border,
+                                        borderWidth: 1,
+                                    }
                                 ]}
                                 activeOpacity={0.7}
                             >
                                 <Text
                                     style={[
                                         styles.repeatDayText,
-                                        repeatDays.includes(day.key) && styles.repeatDayTextActive,
+                                        {
+                                            color: repeatDays.includes(day.key)
+                                                ? colors.onPrimary
+                                                : colors.text,
+                                        }
                                     ]}
                                 >
                                     {day.label}
@@ -148,10 +172,10 @@ export default function AddHabitScreen() {
 
             <Button
                 mode="contained"
-                buttonColor="coral"
+                buttonColor={colors.primary}
                 style={styles.button}
                 onPress={handleSubmit}
-                labelStyle={{ color: "white" }}
+                labelStyle={{ color: colors.onPrimary }}
             >
                 Add Habit
             </Button>
@@ -163,7 +187,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 16,
-        backgroundColor: "#F5F5F5",
     },
     header: {
         flexDirection: "row",
@@ -178,11 +201,9 @@ const styles = StyleSheet.create({
     titleBold: {
         fontSize: 26,
         fontWeight: "bold",
-        color: "#000",
     },
     input: {
         marginBottom: 16,
-        backgroundColor: "white",
     },
     colorsRow: {
         flexDirection: "row",
@@ -215,7 +236,6 @@ const styles = StyleSheet.create({
     },
     repeatLabel: {
         fontSize: 15,
-        color: "#555",
         marginBottom: 8,
         marginLeft: 6,
     },
@@ -228,23 +248,14 @@ const styles = StyleSheet.create({
         width: 38,
         height: 38,
         borderRadius: 19,
-        backgroundColor: "#ffffffff",
-        marginHorizontal: 3,
         alignItems: "center",
         justifyContent: "center",
     },
-    repeatDayCircleActive: {
-        backgroundColor: "coral",
-    },
     repeatDayText: {
-        color: "#222",
         fontWeight: "bold",
         fontSize: 16,
     },
-    repeatDayTextActive: {
-        color: "#ffffffff",
-    },
     button: {
-        paddingVertical: 8,
+        marginBottom: 16,
     },
 });

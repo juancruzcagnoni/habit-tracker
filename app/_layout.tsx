@@ -1,3 +1,4 @@
+import { ThemeProvider } from "@/lib/theme-context";
 import { Stack, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
@@ -7,10 +8,10 @@ import {
   View
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../lib/auth-context";
 import { supabase } from "../lib/supabase";
+import { ThemedStatusBar } from "./components/ThemedStatusBar";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -76,20 +77,22 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
+
     <GestureHandlerRootView style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={{ flex: 1 }}>
           <AuthProvider>
-            <PaperProvider>
+            <ThemeProvider>
               <SafeAreaProvider>
                 <RouteGuard>
+                  <ThemedStatusBar />
                   <Stack>
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen name="auth" options={{ headerShown: false }} />
                   </Stack>
                 </RouteGuard>
               </SafeAreaProvider>
-            </PaperProvider>
+            </ThemeProvider>
           </AuthProvider>
         </View>
       </TouchableWithoutFeedback>
