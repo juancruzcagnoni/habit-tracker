@@ -1,13 +1,15 @@
 import { useThemeToggle } from "@/lib/theme-context";
-import { AppColors } from "@/lib/themeHelpers";
+import { AppColors } from "@/lib/theme-helpers";
 import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { AddHabitTabIcon } from "../components/CustomTabBarIcon";
 
 export default function TabsLayout() {
   const { isDark } = useThemeToggle();
   const colors = isDark ? AppColors.dark : AppColors.light;
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -28,7 +30,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Today's Habits",
+          title: t("habits"),
+          tabBarLabel: t("habits"),
           tabBarIcon: ({ color }) => (
             <Feather name="calendar" size={24} color={color} />
           ),
@@ -38,7 +41,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="add-habit"
         options={{
-          tabBarLabel: () => null, 
+          tabBarLabel: () => null, // Sin texto
           tabBarIcon: (props) => <AddHabitTabIcon {...props} />,
           headerShown: false,
         }}
@@ -46,7 +49,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="streaks"
         options={{
-          title: "Streaks",
+          title: t("streaks"),
+          tabBarLabel: t("streaks"),
           tabBarIcon: ({ color }) => (
             <Feather name="bar-chart-2" size={24} color={color} />
           ),

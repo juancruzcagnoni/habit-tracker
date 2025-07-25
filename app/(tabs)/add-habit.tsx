@@ -1,48 +1,44 @@
 import { supabase } from "@/lib/supabase";
-import { AppColors } from "@/lib/themeHelpers";
 import { useThemeToggle } from "@/lib/theme-context";
+import { AppColors } from "@/lib/theme-helpers";
 import React from "react";
+import { useTranslation } from "react-i18next"; // <--- IMPORTANTE
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Button, TextInput } from "react-native-paper";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const FREQUENCIES = [
-    { value: "daily", label: "Daily" },
-    { value: "weekly", label: "Weekly" },
-    { value: "monthly", label: "Monthly" },
-];
-
-const HABIT_COLORS = [
-    "#FF5E5B", // rojo
-    "#FFD452", // amarillo
-    "#38E68E", // verde
-    "#5BA8FF", // azul
-    "#9B6EFF", // violeta
-    "#CFA46E", // marrón
-    "#A0A0A0", // gris
-];
-
-const WEEK_DAYS = [
-    { key: "M", label: "M" },
-    { key: "T", label: "T" },
-    { key: "W", label: "W" },
-    { key: "T2", label: "T" },
-    { key: "F", label: "F" },
-    { key: "S", label: "S" },
-    { key: "S2", label: "S" },
-];
-
-type Frequency = (typeof FREQUENCIES)[number]["value"];
-
 export default function AddHabitScreen() {
+    const { t } = useTranslation(); // <--- IMPORTANTE
     const [title, setTitle] = React.useState("");
     const [description, setDescription] = React.useState("");
-    const [frequency, setFrequency] = React.useState<Frequency>("daily");
+    const [frequency, setFrequency] = React.useState("daily");
     const insets = useSafeAreaInsets();
-    const [color, setColor] = React.useState(HABIT_COLORS[0]);
     const [repeatDays, setRepeatDays] = React.useState<string[]>([]);
     const { isDark } = useThemeToggle();
     const colors = isDark ? AppColors.dark : AppColors.light;
+
+    // Traducción de FREQUENCIES y WEEK_DAYS dinámicamente:
+    const FREQUENCIES = [
+        { value: "daily", label: t("daily") },
+        { value: "weekly", label: t("weekly") },
+        { value: "monthly", label: t("monthly") },
+    ];
+    const daysShort = t("daysShortAdd", { returnObjects: true }) as string[];
+    const WEEK_DAYS = [
+        { key: "M", label: daysShort[0] },
+        { key: "T", label: daysShort[1] },
+        { key: "W", label: daysShort[2] },
+        { key: "T2", label: daysShort[3] },
+        { key: "F", label: daysShort[4] },
+        { key: "S", label: daysShort[5] },
+        { key: "S2", label: daysShort[6] },
+    ];
+
+    const HABIT_COLORS = [
+        "#FF5E5B", "#FFD452", "#38E68E", "#5BA8FF", "#9B6EFF", "#CFA46E", "#A0A0A0",
+    ];
+
+    const [color, setColor] = React.useState(HABIT_COLORS[0]);
 
     const toggleDay = (key: string) => {
         setRepeatDays((prev) =>
@@ -54,12 +50,12 @@ export default function AddHabitScreen() {
         const { data: userData, error: userError } = await supabase.auth.getUser();
 
         if (userError || !userData?.user) {
-            alert("You must be logged in to add a habit.");
+            alert(t("mustBeLoggedIn"));
             return;
         }
 
         if (!title || !description) {
-            alert("Please fill in all fields.");
+            alert(t("fillAllFields"));
             return;
         }
 
@@ -75,7 +71,7 @@ export default function AddHabitScreen() {
         if (error) {
             alert("Error adding habit: " + error.message);
         } else {
-            alert("Habit added successfully!");
+            alert(t("habitAdded"));
             setTitle("");
             setDescription("");
             setFrequency("daily");
@@ -90,13 +86,13 @@ export default function AddHabitScreen() {
             <View style={{ flex: 1 }}>
                 <View style={styles.header}>
                     <View style={styles.titleContainer}>
-                        <Text style={[styles.titleBold, { color: colors.text }]}>Create a new habit</Text>
+                        <Text style={[styles.titleBold, { color: colors.text }]}>{t("createHabit")}</Text>
                     </View>
                 </View>
 
                 <TextInput
                     style={[styles.input, { backgroundColor: colors.surface }]}
-                    label="Title"
+                    label={t("title")}
                     value={title}
                     onChangeText={setTitle}
                     mode="outlined"
@@ -106,7 +102,7 @@ export default function AddHabitScreen() {
                 />
                 <TextInput
                     style={[styles.input, { backgroundColor: colors.surface }]}
-                    label="Description"
+                    label={t("description")}
                     value={description}
                     onChangeText={setDescription}
                     mode="outlined"
@@ -134,7 +130,7 @@ export default function AddHabitScreen() {
                 </View>
 
                 <View style={styles.repeatContainer}>
-                    <Text style={[styles.repeatLabel, { color: colors.textSecondary }]}>Repeat days</Text>
+                    <Text style={[styles.repeatLabel, { color: colors.textSecondary }]}>{t("repeatDays")}</Text>
                     <View style={styles.repeatDaysRow}>
                         {WEEK_DAYS.map((day, idx) => (
                             <TouchableOpacity
@@ -177,7 +173,7 @@ export default function AddHabitScreen() {
                 onPress={handleSubmit}
                 labelStyle={{ color: colors.onPrimary }}
             >
-                Add Habit
+                {t("addHabit")}
             </Button>
         </View>
     );

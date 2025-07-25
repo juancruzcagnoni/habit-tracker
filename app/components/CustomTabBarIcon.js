@@ -1,8 +1,8 @@
+import { useThemeToggle } from "@/lib/theme-context";
+import { AppColors } from "@/lib/theme-helpers";
+import { Feather } from "@expo/vector-icons";
 import React from "react";
 import { View } from "react-native";
-import { Feather } from "@expo/vector-icons";
-import { useThemeToggle } from "@/lib/theme-context";
-import { AppColors } from "@/lib/themeHelpers";
 
 export function AddHabitTabIcon({ color, size }) {
   const { isDark } = useThemeToggle();

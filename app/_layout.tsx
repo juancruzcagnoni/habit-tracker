@@ -12,6 +12,10 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider } from "../lib/auth-context";
 import { supabase } from "../lib/supabase";
 import { ThemedStatusBar } from "./components/ThemedStatusBar";
+import "../lib/i18n";
+import { I18nextProvider } from "react-i18next";
+import i18n from "../lib/i18n";
+import { HabitsProvider } from "@/lib/habits-context";
 
 function RouteGuard({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
@@ -77,22 +81,25 @@ function RouteGuard({ children }: { children: React.ReactNode }) {
 
 export default function RootLayout() {
   return (
-
     <GestureHandlerRootView style={{ flex: 1 }}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={{ flex: 1 }}>
           <AuthProvider>
-            <ThemeProvider>
-              <SafeAreaProvider>
-                <RouteGuard>
-                  <ThemedStatusBar />
-                  <Stack>
-                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen name="auth" options={{ headerShown: false }} />
-                  </Stack>
-                </RouteGuard>
-              </SafeAreaProvider>
-            </ThemeProvider>
+            <HabitsProvider>
+              <ThemeProvider>
+                <I18nextProvider i18n={i18n}>
+                  <SafeAreaProvider>
+                    <RouteGuard>
+                      <ThemedStatusBar />
+                      <Stack>
+                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                        <Stack.Screen name="auth" options={{ headerShown: false }} />
+                      </Stack>
+                    </RouteGuard>
+                  </SafeAreaProvider>
+                </I18nextProvider>
+              </ThemeProvider>
+            </HabitsProvider>
           </AuthProvider>
         </View>
       </TouchableWithoutFeedback>
