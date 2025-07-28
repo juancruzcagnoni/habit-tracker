@@ -6,7 +6,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, StyleSheet, View } from "react-native";
+import { Alert, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Componentes
@@ -166,7 +166,12 @@ export default function IndexScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top, backgroundColor: colors.background }]}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 32 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false} 
+    >
       <HeaderCalendar
         month={months[selectedDate.getMonth()]}
         day={selectedDate.getDate()}
@@ -205,7 +210,7 @@ export default function IndexScreen() {
         colors={colors}
         t={t}
       />
-    </View>
+    </ScrollView>
   );
 }
 

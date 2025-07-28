@@ -46,13 +46,12 @@ export default function StreaksScreen() {
         { paddingTop: insets.top, backgroundColor: colors.background }
       ]}
       contentContainerStyle={{ paddingBottom: 32 }}
+      keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false} 
     >
       <View style={{ marginBottom: 16 }}>
         <Text style={{
-          color: colors.text,
-          fontWeight: "bold",
-          fontSize: 24,
-          marginLeft: 4,
+          fontSize: 26, fontWeight: "bold", color: colors.text
         }}>
           {t("streaksTitle", "Habit Streaks")}
         </Text>
