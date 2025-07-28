@@ -156,8 +156,8 @@ export default function IndexScreen() {
 
   const actionColors = {
     left: colors.error,
-    right: colors.primary,
-    uncomplete: "#FFB300",
+    right: colors.complete,
+    uncomplete: "#eab843ff",
   };
 
   const handleToggleLanguage = () => {
@@ -167,8 +167,11 @@ export default function IndexScreen() {
 
   return (
     <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 32 }}
+      style={[
+        styles.container,
+        { paddingTop: insets.top, backgroundColor: colors.background }
+      ]}
+      contentContainerStyle={{ paddingBottom: 32 }}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false} 
     >

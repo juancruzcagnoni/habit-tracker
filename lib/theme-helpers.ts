@@ -11,7 +11,7 @@ export const AppColors = {
         card: "#fff",
         cardCompleted: "#eeeeee",
         error: "#e53935",
-        // ...otros
+        complete: "#6bc66eff",
     },
     dark: {
         background: "#252525ff",
@@ -24,6 +24,6 @@ export const AppColors = {
         card: "#363636ff",
         cardCompleted: "#353535ff",
         error: "#e57373",
-        // ...otros
+        complete: "#6bc66eff",
     }
 };
