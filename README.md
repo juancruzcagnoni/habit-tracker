@@ -20,11 +20,22 @@ A beautifully crafted habit tracking app built with **React Native**, **Expo**, 
 - **Add Habit:** Form to create new habits with color, frequency, and repeat days
 - **Settings:** Language and theme toggle, logout
 
+#### Dark theme
+
 <p align="center">
-  <img src="assets/readme/habits.PNG" alt="Habits Screen" width="200"/>
-  <img src="assets/readme/settings.PNG" alt="Settings Screen" width="200"/>
-  <img src="assets/readme/add-habit.PNG" alt="Add Habit Screen" width="200"/>
-  <img src="assets/readme/streaks.PNG" alt="Streaks Screen" width="200"/>
+  <img src="assets/readme/habits-dark.PNG" alt="Habits Dark" width="200"/>
+  <img src="assets/readme/settings-dark.PNG" alt="Settings Dark" width="200"/>
+  <img src="assets/readme/add-habit-dark.PNG" alt="Add Habit Dark" width="200"/>
+  <img src="assets/readme/streaks-dark.PNG" alt="Streaks Dark" width="200"/>
+</p>
+
+#### Light theme
+
+<p align="center">
+  <img src="assets/readme/habits-light.PNG" alt="Habits Light" width="200"/>
+  <img src="assets/readme/settings-light.PNG" alt="Settings Light" width="200"/>
+  <img src="assets/readme/add-habit-light.PNG" alt="Add Habit Light" width="200"/>
+  <img src="assets/readme/streaks-light.PNG" alt="Streaks Light" width="200"/>
 </p>
 
 ## Tech Stack
