@@ -1,50 +1,53 @@
-# Welcome to your Expo app 👋
+# Habit Tracker - Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A beautifully crafted habit tracking app built with **React Native**, **Expo**, and **Supabase**, designed to help users build consistency and stay on track with their personal goals.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Create, manage, and delete habits
+- Choose frequency: daily, weekly, or monthly
+- Select specific days for custom habit repetition
+- Mark habits as completed or skipped
+- Visualize progress with a streak view similar to GitHub’s contributions chart
+- Multi-language support (English and Spanish)
+- Light/Dark theme toggle
+- Responsive and smooth UI for mobile devices
 
-   ```bash
-   npm install
-   ```
+## Screens
 
-2. Start the app
+- **Home:** Calendar and habit list for the selected day
+- **Streaks:** Visual streak overview for each habit
+- **Add Habit:** Form to create new habits with color, frequency, and repeat days
+- **Settings:** Language and theme toggle, logout
 
-   ```bash
-   npx expo start
-   ```
+  ![App Preview](assets/readme-habits.png)
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **React Native** with Expo
+- **Supabase** (PostgreSQL + Auth) for backend
+- **expo-router** for routing
+- **react-native-paper** for UI components
+- **react-i18next** for localization
+- **Context API** for global state (habits and completions)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Architecture
 
-## Get a fresh project
+- Centralized context for managing habits and their completion status
+- Modular components: `HeaderCalendar`, `WeekCalendar`, `HabitsList`, `HabitGrid`, etc.
+- Internationalization and theming integrated into the core layout
+- Auto-refresh logic to keep the UI in sync across screens without reloads
 
-When you're ready, run:
+## Authentication
 
-```bash
-npm run reset-project
-```
+User authentication is handled via **Supabase Auth**. Route protection is implemented through a custom `RouteGuard` component that redirects unauthenticated users to the login screen.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Why this project?
 
-## Learn more
+This app was built to demonstrate:
+- Clean state management with context
+- Modern mobile UI design using React Native
+- Integration with Supabase as a scalable backend
+- Real-time UI feedback without full-screen reloads
+- A user-friendly, multilingual experience
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
