@@ -20,7 +20,7 @@ A beautifully crafted habit tracking app built with **React Native**, **Expo**, 
 - **Add Habit:** Form to create new habits with color, frequency, and repeat days
 - **Settings:** Language and theme toggle, logout
 
-  ![App Preview](assets/readme-habits.png)
+  ![App Preview](assets/readme-habits.PNG)
 
 ## Tech Stack
 
