@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { Dimensions } from "react-native";
 import { supabase } from "@/lib/supabase";
 
 export type Completion = {
@@ -11,27 +12,55 @@ type HabitsContextType = {
   completeHabit: (habit_id: number, date: string) => Promise<void>;
   uncompleteHabit: (habit_id: number, date: string) => Promise<void>;
   setCompletions: React.Dispatch<React.SetStateAction<Completion[]>>;
+  habits: any[];
+  setHabits: React.Dispatch<React.SetStateAction<any[]>>;
+  fetchHabits: () => Promise<void>;
 };
 
 const HabitsContext = createContext<HabitsContextType | null>(null);
 
 export function HabitsProvider({ children }: { children: React.ReactNode }) {
   const [completions, setCompletions] = useState<Completion[]>([]);
+  const [habits, setHabits] = useState<any[]>([]);
 
-  // Carga inicial
+  const fetchHabits = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) return;
+    const userId = userData.user.id;
+    const { data: habitsData } = await supabase
+      .from("habits")
+      .select("*")
+      .eq("user_id", userId);
+    setHabits(habitsData || []);
+  };
+
   useEffect(() => {
+    fetchHabits();
+
     const fetchCompletions = async () => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return;
       const userId = userData.user.id;
-      const lastNDates = getLastNDates(30);
+
+      const screenWidth = Dimensions.get("window").width;
+      const DOT_SIZE = 18;
+      const GAP = 6;
+      const ROWS = 4;
+      const horizontalPadding = 32 + 4 * 2;
+      const columns = Math.floor((screenWidth - horizontalPadding + GAP) / (DOT_SIZE + GAP));
+      const totalDots = columns * ROWS;
+
+      const lastNDates = getLastNDates(totalDots);
+
       const { data } = await supabase
         .from("habit_completions")
         .select("habit_id,date")
         .eq("user_id", userId)
         .in("date", lastNDates);
+
       setCompletions(data || []);
     };
+
     fetchCompletions();
   }, []);
 
@@ -51,7 +80,17 @@ export function HabitsProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <HabitsContext.Provider value={{ completions, completeHabit, uncompleteHabit, setCompletions }}>
+    <HabitsContext.Provider
+      value={{
+        completions,
+        completeHabit,
+        uncompleteHabit,
+        setCompletions,
+        habits,
+        setHabits,
+        fetchHabits,
+      }}
+    >
       {children}
     </HabitsContext.Provider>
   );

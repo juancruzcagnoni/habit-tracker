@@ -42,7 +42,7 @@ export const resources = {
             current: "Current",
             best: "Best",
             total: "Total",
-            streakScreen: "Habit streaks",
+            streaksTitle: "Habit streaks",
         }
     },
     es: {
@@ -85,7 +85,7 @@ export const resources = {
             current: "Actual",
             best: "Mejor",
             total: "Total",
-            streakScreen: "Rachas de hábitos",
+            streaksTitle: "Rachas de hábitos",
         }
     },
 };

@@ -1,21 +1,19 @@
 import { useHabits } from "@/lib/habits-context";
-import { supabase } from "@/lib/supabase";
 import { useThemeToggle } from "@/lib/theme-context";
 import { AppColors } from "@/lib/theme-helpers";
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import HabitGrid from "../components/HabitGrid";
 
-const DOT_SIZE = 18; // tamaño de cada punto
-const GAP = 6;      // espacio entre puntos
+const DOT_SIZE = 18;
+const GAP = 6;
 const ROWS = 4;
 
 function getColumns() {
   const screenWidth = Dimensions.get("window").width;
-  // padding horizontal (container) + margen izquierdo grid + margen derecho grid
-  const horizontalPadding = 32 + 4 * 2; // (container padding 16px por lado + margen extra opcional)
+  const horizontalPadding = 32 + 4 * 2;
   return Math.floor((screenWidth - horizontalPadding + GAP) / (DOT_SIZE + GAP));
 }
 
@@ -30,38 +28,16 @@ function getLastNDates(n: number) {
   return arr;
 }
 
-type Habit = {
-  id: number;
-  title: string;
-  color: string;
-};
-
 export default function StreaksScreen() {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const { completions } = useHabits();
+  const { completions, habits } = useHabits(); // ✅ usar contexto
   const { isDark } = useThemeToggle();
   const colors = isDark ? AppColors.dark : AppColors.light;
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
-  // calcular columnas según pantalla
   const columns = getColumns();
   const totalDots = columns * ROWS;
   const lastNDates = getLastNDates(totalDots);
-
-  useEffect(() => {
-    const fetchHabits = async () => {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData?.user) return;
-      const userId = userData.user.id;
-      const { data: habitsData } = await supabase
-        .from("habits")
-        .select("*")
-        .eq("user_id", userId);
-      setHabits(habitsData || []);
-    };
-    fetchHabits();
-  }, []);
 
   return (
     <ScrollView
@@ -71,7 +47,6 @@ export default function StreaksScreen() {
       ]}
       contentContainerStyle={{ paddingBottom: 32 }}
     >
-      {/* Título */}
       <View style={{ marginBottom: 16 }}>
         <Text style={{
           color: colors.text,

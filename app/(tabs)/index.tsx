@@ -1,3 +1,4 @@
+import { useHabits } from "@/lib/habits-context";
 import { supabase } from "@/lib/supabase";
 import { useThemeToggle } from "@/lib/theme-context";
 import { AppColors } from "@/lib/theme-helpers";
@@ -19,7 +20,6 @@ function formatDate(date: Date): string {
 }
 
 export default function IndexScreen() {
-  const [habits, setHabits] = useState<any[]>([]);
   const [completed, setCompleted] = useState<any[]>([]);
   const [exclusions, setExclusions] = useState<any[]>([]);
   const swipeableRefs = useRef<{ [key: string]: any }>({});
@@ -33,39 +33,38 @@ export default function IndexScreen() {
   const { i18n, t } = useTranslation();
   const months = t("months", { returnObjects: true }) as string[];
 
+  const {
+    completeHabit,
+    uncompleteHabit,
+    setHabits,
+    fetchHabits,
+    habits
+  } = useHabits();
+
   // Calendario
   const daysOfWeek = t("daysShort", { returnObjects: true }) as string[];
   const WEEK_DAYS_KEYS = ["S2", "M", "T", "W", "T2", "F", "S"];
   const selectedDayKey = WEEK_DAYS_KEYS[selectedDate.getDay()];
   const userDateStr = formatDate(selectedDate);
 
-  // Fetch hábitos, completados y exclusiones
-  const fetchHabits = async () => {
+  // Estado diario (completados y exclusiones)
+  const fetchDailyState = async () => {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError || !userData?.user) return;
     const userId = userData.user.id;
 
-    // Hábitos
-    const { data, error } = await supabase
-      .from("habits")
-      .select("*")
-      .eq("user_id", userId);
-
-    // Completados
     const { data: completions } = await supabase
       .from("habit_completions")
       .select("*")
       .eq("user_id", userId)
       .eq("date", userDateStr);
 
-    // Exclusiones
     const { data: exclusionData } = await supabase
       .from("habit_exclusions")
       .select("*")
       .eq("user_id", userId)
       .eq("date", userDateStr);
 
-    setHabits(data || []);
     setCompleted(completions?.map((c: any) => c.habit_id) || []);
     setExclusions(exclusionData?.map((e: any) => e.habit_id) || []);
   };
@@ -73,6 +72,7 @@ export default function IndexScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchHabits();
+      fetchDailyState();
     }, [selectedDate])
   );
 
@@ -95,7 +95,7 @@ export default function IndexScreen() {
             await supabase.from("habit_exclusions").insert([
               { habit_id: habitId, user_id: userId, date: userDateStr },
             ]);
-            fetchHabits();
+            fetchDailyState();
           },
         },
         {
@@ -105,36 +105,22 @@ export default function IndexScreen() {
             await supabase.from("habit_completions").delete().eq("habit_id", habitId);
             await supabase.from("habit_exclusions").delete().eq("habit_id", habitId);
             await supabase.from("habits").delete().eq("id", habitId);
-            fetchHabits();
+
+            setHabits((prev) => prev.filter((h) => h.id !== habitId));
           },
         },
       ]
     );
   };
 
-  // Marcar como completado
   const handleCompleteHabit = async (habitId: number) => {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData?.user) return;
-    const userId = userData.user.id;
-    await supabase.from("habit_completions").insert([
-      { habit_id: habitId, user_id: userId, date: userDateStr },
-    ]);
-    fetchHabits();
+    await completeHabit(habitId, userDateStr);
+    fetchDailyState();
   };
 
-  // Marcar como incompleto
   const handleUncompleteHabit = async (habitId: number) => {
-    const { data: userData, error: userError } = await supabase.auth.getUser();
-    if (userError || !userData?.user) return;
-    const userId = userData.user.id;
-    await supabase
-      .from("habit_completions")
-      .delete()
-      .eq("habit_id", habitId)
-      .eq("user_id", userId)
-      .eq("date", userDateStr);
-    fetchHabits();
+    await uncompleteHabit(habitId, userDateStr);
+    fetchDailyState();
   };
 
   // Semana actual de lunes a domingo
@@ -154,7 +140,6 @@ export default function IndexScreen() {
   }
   const weekDays = getWeekDaysMondayToSunday(selectedDate);
 
-  // Separar hábitos visibles y completados
   const visibleHabits = habits.filter((habit) => {
     if (!habit.repeat_days || habit.repeat_days.length === 0) return true;
     return habit.repeat_days.includes(WEEK_DAYS_KEYS[selectedDate.getDay()]);
@@ -163,7 +148,6 @@ export default function IndexScreen() {
   const incompleteHabits = visibleHabits.filter((habit) => !completed.includes(habit.id));
   const completedHabits = visibleHabits.filter((habit) => completed.includes(habit.id));
 
-  // Cerrar sesión
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setShowSettings(false);
@@ -225,7 +209,6 @@ export default function IndexScreen() {
   );
 }
 
-// Sólo quedan los valores no de color en el StyleSheet
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   calendarContainer: {
