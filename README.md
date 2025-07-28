@@ -20,11 +20,11 @@ A beautifully crafted habit tracking app built with **React Native**, **Expo**, 
 - **Add Habit:** Form to create new habits with color, frequency, and repeat days
 - **Settings:** Language and theme toggle, logout
 
-  <p align="center">
+<p align="center">
   <img src="assets/readme/habits.PNG" alt="Habits Screen" width="200"/>
-  <img src="assets/readme/streaks.PNG" alt="Streaks Screen" width="200"/>
-  <img src="assets/readme/add-habit.PNG" alt="Add Habit Screen" width="200"/>
   <img src="assets/readme/settings.PNG" alt="Settings Screen" width="200"/>
+  <img src="assets/readme/add-habit.PNG" alt="Add Habit Screen" width="200"/>
+  <img src="assets/readme/streaks.PNG" alt="Streaks Screen" width="200"/>
 </p>
 
 ## Tech Stack
